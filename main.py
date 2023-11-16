@@ -76,6 +76,7 @@ def load_projects():
     return
 
 def test():
+    print("Test çalıştı")
     logging.info("Test çalıştı")
 
 
@@ -93,7 +94,7 @@ if __name__ == "__main__":
     # update_entry(1, 'Updated error message')
     # read_all_entries()
 
-    schedule.every(1).minutes.do(test)
+    schedule.every(10).minutes.do(test)
 
     # Create threads for schedule and rest functions
     schedule_thread = threading.Thread(target=run_schedule)
