@@ -6,9 +6,18 @@ from paramiko import sftp as ssh
 import schedule
 import time
 import re
+
+from sqlalchemy import try_cast
+
 import rest
 
 import threading
+
+from models.json_deger import create_json_deger
+from models.proje import create_proje
+from models.regex_deger import create_regex_deger
+from ortakbaglanti import Session, SessionScope, session_scope
+
 
 def read_remote_log_file():
 
@@ -46,6 +55,18 @@ def get_regex_values(desen, metin):
 
     eslesmeler = re.findall(desen, metin)
     return eslesmeler
+
+def test_proje_create():
+
+    #session = SessionScope()
+    with session_scope() as session:
+
+        proje_instance = create_proje(session,"Proje 1", "192.168.1.1", 1)
+
+        regex_deger_instance = create_regex_deger(session, "Regex Deger 1", proje_instance.id)
+
+        json_deger_instance = create_json_deger(session,"Json Deger 1", proje_instance.id)
+
 
 
 def get_json_values(json_str, variable_name):
@@ -90,20 +111,20 @@ def run_rest():
 
 
 if __name__ == "__main__":
-    # create_entry('2023-11-12', 'example', 'GET', 'None')
-    # update_entry(1, 'Updated error message')
-    # read_all_entries()
 
     schedule.every(10).minutes.do(test)
 
     # Create threads for schedule and rest functions
     schedule_thread = threading.Thread(target=run_schedule)
     rest_thread = threading.Thread(target=run_rest)
+    test_proje_create_thread = threading.Thread(target=test_proje_create)
 
     # Start both threads
     schedule_thread.start()
     rest_thread.start()
+    test_proje_create_thread.start()
 
     # Wait for both threads to finish
     schedule_thread.join()
     rest_thread.join()
+    test_proje_create_thread.join()
