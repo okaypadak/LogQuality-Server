@@ -1,72 +1,78 @@
-#from takip import create_entry, read_all_entries, update_entry, delete_entry
+import concurrent
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor
 
 from paramiko import sftp as ssh
 import schedule
 import time
 import re
-
-from sqlalchemy import try_cast
-
 import rest
 
 import threading
 
+from models.proje import get_all_proje_sayac
 from models.json_deger import create_json_deger
 from models.proje import create_proje
 from models.regex_deger import create_regex_deger
-from ortakbaglanti import Session, SessionScope, session_scope
+from ortakbaglanti import session_scope
 
 
-def read_remote_log_file():
-
-    konum = None
+def read_remote_log_file(gelen):
 
     ssh_client = ssh.SSHClient()
     ssh_client.set_missing_host_key_policy(ssh.AutoAddPolicy())
 
-    # Sunucu bilgileri
-    hostname = 'uzak_sunucu_ip_adresi'
-    username = 'kullanici_adi'
-    password = 'sifre'
-
     try:
-        ssh_client.connect(hostname, username=username, password=password)
+        ssh_client.connect(gelen['sunucu_ip'], username=gelen['kullanici_adi'], password=gelen['kullanici_sifre'])
         sftp = ssh_client.open_sftp()
 
-        remote_log_path = '/uzak/dizin/logdosyasi.log'
+        with sftp.file(gelen['log_dosya_yolu'], 'r') as dosya:
+            dosya.seek(gelen['gunluk_sayac'])
+            lines = dosya.readlines()
+            new_position = dosya.tell()
 
-        with sftp.file(remote_log_path, 'r') as dosya:
-            dosya.seek(0 if not konum else konum)
-            for satir in dosya:
-                print(satir)
-                konum = dosya.tell()
+        return gelen['gunluk_sayac_id'], lines, new_position
 
     except Exception as e:
         print(f"Hata: {e}")
+        return None, gelen['gunluk_sayac']
 
     finally:
         sftp.close()
         ssh_client.close()
 
 
-def get_regex_values(desen, metin):
+def process_log_files(proje_listesi):
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        # list comprehension
+        futures = {executor.submit(read_remote_log_file, proje): proje for proje in proje_listesi}
 
+        for future in concurrent.futures.as_completed(futures):
+            proje_adi, lines, new_position = future.result()
+
+            if lines is not None:
+                for line in lines:
+                    print(line)
+                print(f"New Position for {proje_adi}: {new_position}")
+
+            else:
+                print(f"Error reading remote log file for {proje_adi}.")
+
+
+def get_regex_values(desen, metin):
     eslesmeler = re.findall(desen, metin)
     return eslesmeler
 
+
 def test_proje_create():
-
-    #session = SessionScope()
+    # session = SessionScope()
     with session_scope() as session:
-
-        proje_instance = create_proje(session,"Proje 1", "192.168.1.1", 1)
+        proje_instance = create_proje(session, "Proje 1", "192.168.1.1", 1)
 
         regex_deger_instance = create_regex_deger(session, "Regex Deger 1", proje_instance.id)
 
-        json_deger_instance = create_json_deger(session,"Json Deger 1", proje_instance.id)
-
+        json_deger_instance = create_json_deger(session, "Json Deger 1", proje_instance.id)
 
 
 def get_json_values(json_str, variable_name):
@@ -84,6 +90,7 @@ def get_json_values(json_str, variable_name):
     except json.JSONDecodeError as e:
         return f"Hata: JSON çözümlenemedi. {e}"
 
+
 def is_json(string):
     try:
         json.loads(string)
@@ -93,12 +100,19 @@ def is_json(string):
 
 
 def load_projects():
-
     return
+
 
 def test():
     print("Test çalıştı")
     logging.info("Test çalıştı")
+
+
+def proje_listesi():
+    with session_scope() as session:
+        projeler = get_all_proje_sayac(session)
+
+    process_log_files(projeler)
 
 
 def run_schedule():
@@ -106,25 +120,25 @@ def run_schedule():
         schedule.run_pending()
         time.sleep(1)
 
+
 def run_rest():
     rest.app.run()
 
 
 if __name__ == "__main__":
-
-    schedule.every(10).minutes.do(test)
+    schedule.every(1).minutes.do(proje_listesi)
 
     # Create threads for schedule and rest functions
     schedule_thread = threading.Thread(target=run_schedule)
     rest_thread = threading.Thread(target=run_rest)
-    test_proje_create_thread = threading.Thread(target=test_proje_create)
+    # proje_listesi_thread = threading.Thread(target=proje_listesi)
 
     # Start both threads
     schedule_thread.start()
-    rest_thread.start()
-    test_proje_create_thread.start()
+    #rest_thread.start()
+    # proje_listesi_thread.start()
 
     # Wait for both threads to finish
     schedule_thread.join()
-    rest_thread.join()
-    test_proje_create_thread.join()
+    #rest_thread.join()
+    # proje_listesi_thread.join()
