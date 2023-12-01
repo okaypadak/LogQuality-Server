@@ -7,7 +7,7 @@ class GunlukSayac(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     tarih = Column(Integer)
-    sayac = Column(BigInteger)
+    satir = Column(BigInteger)
     proje_id = Column(Integer, ForeignKey('proje.id'))
 
     proje = relationship('Proje', foreign_keys=[proje_id])
@@ -19,7 +19,7 @@ def get_or_create_gunluk_sayac(session, proje_id, tarih):
     if existing_record:
         return existing_record
     else:
-        new_record = GunlukSayac(proje_id=proje_id, tarih=tarih, sayac=0)
+        new_record = GunlukSayac(proje_id=proje_id, tarih=tarih, satir=0)
         session.add(new_record)
         session.commit()
         session.refresh(new_record)
@@ -27,5 +27,5 @@ def get_or_create_gunluk_sayac(session, proje_id, tarih):
 
 def update_gunluk_sayac(session, proje_id, tarih):
     record = get_or_create_gunluk_sayac(proje_id, tarih)
-    record.sayac += 1
+    record.satir += 1
     session.commit()

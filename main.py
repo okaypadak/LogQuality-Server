@@ -3,7 +3,7 @@ import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
-from paramiko import sftp as ssh
+import paramiko
 import schedule
 import time
 import re
@@ -12,16 +12,16 @@ import rest
 import threading
 
 from models.proje import get_all_proje_sayac
-from models.json_deger import create_json_deger
+from models.aranan_json import create_aranan_json
 from models.proje import create_proje
-from models.regex_deger import create_regex_deger
+from models.aranan_regex import create_regex_deger
 from ortakbaglanti import session_scope
 
 
 def read_remote_log_file(gelen):
 
-    ssh_client = ssh.SSHClient()
-    ssh_client.set_missing_host_key_policy(ssh.AutoAddPolicy())
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     try:
         ssh_client.connect(gelen['sunucu_ip'], username=gelen['kullanici_adi'], password=gelen['kullanici_sifre'])
@@ -36,7 +36,7 @@ def read_remote_log_file(gelen):
 
     except Exception as e:
         print(f"Hata: {e}")
-        return None, gelen['gunluk_sayac']
+        return None
 
     finally:
         sftp.close()
@@ -128,17 +128,16 @@ def run_rest():
 if __name__ == "__main__":
     schedule.every(1).minutes.do(proje_listesi)
 
-    # Create threads for schedule and rest functions
     schedule_thread = threading.Thread(target=run_schedule)
     rest_thread = threading.Thread(target=run_rest)
-    # proje_listesi_thread = threading.Thread(target=proje_listesi)
+    proje_listesi_thread = threading.Thread(target=proje_listesi)
 
     # Start both threads
     schedule_thread.start()
     #rest_thread.start()
-    # proje_listesi_thread.start()
+    proje_listesi_thread.start()
 
     # Wait for both threads to finish
     schedule_thread.join()
     #rest_thread.join()
-    # proje_listesi_thread.join()
+    proje_listesi_thread.join()
