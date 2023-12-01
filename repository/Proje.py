@@ -1,0 +1,84 @@
+from models.ProjeModel import Proje
+from models.GunlukSayacModel import GunlukSayac
+
+
+
+# CRUD işlemleri için fonksiyonlar
+from datetime import datetime
+
+class ProjeManager:
+    # def __init__(self, session):
+    #     self.session = session
+
+    @classmethod
+    def create_proje(self, session, proje_adi, sunucu_ip, sunucu_port, kullanici_adi, kullanici_sifre, log_dosya_yolu, secim):
+        new_proje = Proje(
+            proje_adi=proje_adi,
+            sunucu_ip=sunucu_ip,
+            sunucu_port=sunucu_port,
+            kullanici_adi=kullanici_adi,
+            kullanici_sifre=kullanici_sifre,
+            log_dosya_yolu=log_dosya_yolu,
+            secim=secim
+        )
+
+        session.add(new_proje)
+        session.push()
+        #session.refresh(new_proje)
+
+        return new_proje
+    def get_all_projeler(self, session):
+        return session.query(Proje).all()
+
+    def get_proje_by_id(self, session, proje_id):
+        return session.query(Proje).filter(Proje.id == proje_id).first()
+
+    def get_all_proje_sayac(self, session):
+        today_date = int(datetime.now().strftime('%Y%m%d'))
+
+        gelen_projeler = (
+            session.query(Proje, GunlukSayac)
+            .join(GunlukSayac, Proje.id == GunlukSayac.proje_id)
+            .filter(GunlukSayac.tarih == today_date)
+            .all()
+        )
+
+        proje_listesi = []
+
+        for proje, gunluk_sayac in gelen_projeler:
+            proje_dict = {
+                'proje_id': proje.id,
+                'proje_adi': proje.proje_adi,
+                'sunucu_ip': proje.sunucu_ip,
+                'sunucu_port': proje.sunucu_port,
+                'log_dosya_yolu': proje.log_dosya_yolu,
+                'kullanici_adi': proje.kullanici_adi,
+                'kullanici_sifre': proje.kullanici_sifre,
+                'gunluk_sayac_id': gunluk_sayac.id,
+                'gunluk_sayac': gunluk_sayac.sayac
+            }
+
+            proje_listesi.append(proje_dict)
+
+        return proje_listesi
+
+    def update_proje(self, session, proje_id, new_values):
+        proje = self.session.query(Proje).filter(Proje.id == proje_id).first()
+        for key, value in new_values.items():
+            setattr(proje, key, value)
+        self.session.commit()
+        return proje
+
+    def delete_proje(self, session, proje_id):
+        proje = session.query(Proje).filter_by(id=proje_id).first()
+        if proje:
+            session.delete(proje)
+            return True
+        return False
+
+    def create_gunluk_sayac(self, session, proje_id, tarih, sayac):
+        new_gunluk_sayac = GunlukSayac(proje_id=proje_id, tarih=tarih, sayac=sayac)
+        session.add(new_gunluk_sayac)
+        session.commit()
+        session.refresh(new_gunluk_sayac)
+        return new_gunluk_sayac

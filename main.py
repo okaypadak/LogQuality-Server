@@ -2,20 +2,15 @@ import concurrent
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
-
 import paramiko
 import schedule
 import time
 import re
 import rest
-
 import threading
-
-from models.proje import get_all_proje_sayac
-from models.aranan_json import create_aranan_json
-from models.proje import create_proje
-from models.aranan_regex import create_regex_deger
 from ortakbaglanti import session_scope
+from repository.Proje import ProjeManager
+
 
 
 def read_remote_log_file(gelen):
@@ -32,7 +27,7 @@ def read_remote_log_file(gelen):
             lines = dosya.readlines()
             new_position = dosya.tell()
 
-        return gelen['gunluk_sayac_id'], lines, new_position
+        return gelen['proje_id'], lines, gelen['gunluk_sayac_id'], new_position
 
     except Exception as e:
         print(f"Hata: {e}")
@@ -44,20 +39,28 @@ def read_remote_log_file(gelen):
 
 
 def process_log_files(proje_listesi):
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor() as executor:
         # list comprehension
         futures = {executor.submit(read_remote_log_file, proje): proje for proje in proje_listesi}
 
         for future in concurrent.futures.as_completed(futures):
-            proje_adi, lines, new_position = future.result()
+            proje_id, lines, sayac_id, new_position = future.result()
+
+            #gunluk_sayac güncelle
 
             if lines is not None:
                 for line in lines:
-                    print(line)
-                print(f"New Position for {proje_adi}: {new_position}")
+                    satir_ayristir(line)
+                print(f"New Position for {proje_id}: {new_position}")
 
             else:
-                print(f"Error reading remote log file for {proje_adi}.")
+                print(f"Error reading remote log file for {proje_id}.")
+
+
+def satir_ayristir(satir):
+    
+
+
 
 
 def get_regex_values(desen, metin):
@@ -68,11 +71,8 @@ def get_regex_values(desen, metin):
 def test_proje_create():
     # session = SessionScope()
     with session_scope() as session:
-        proje_instance = create_proje(session, "Proje 1", "192.168.1.1", 1)
+        proje_instance = ProjeManager.create_proje(session, "Proje 1", "192.168.1.1", 22 , "admin", "1234", "/var/log/Apache",1)
 
-        regex_deger_instance = create_regex_deger(session, "Regex Deger 1", proje_instance.id)
-
-        json_deger_instance = create_json_deger(session, "Json Deger 1", proje_instance.id)
 
 
 def get_json_values(json_str, variable_name):
@@ -99,18 +99,11 @@ def is_json(string):
         return False
 
 
-def load_projects():
-    return
-
-
-def test():
-    print("Test çalıştı")
-    logging.info("Test çalıştı")
-
-
 def proje_listesi():
     with session_scope() as session:
-        projeler = get_all_proje_sayac(session)
+
+        proje = ProjeManager()
+        projeler = proje.get_all_proje_sayac(session)
 
     process_log_files(projeler)
 
