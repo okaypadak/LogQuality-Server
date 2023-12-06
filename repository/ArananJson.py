@@ -10,6 +10,9 @@ class ArananJsonManager:
         session.refresh(new_aranan_json)
         return new_aranan_json
 
+    def get_all_regex(self):
+        return self.session.query(ArananJson).all()
+
     def read_aranan_json(self, json_id):
         return self.session.query(ArananJson).filter_by(id=json_id).first()
 

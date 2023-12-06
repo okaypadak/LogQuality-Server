@@ -6,11 +6,12 @@ from models.GunlukSayacModel import GunlukSayac
 # CRUD işlemleri için fonksiyonlar
 from datetime import datetime
 
-class ProjeManager:
-    # def __init__(self, session):
-    #     self.session = session
+from repository.GunlukSayac import GunlukSayacManager
+from repository.Takip import TakipManager
 
-    @classmethod
+
+class ProjeManager:
+
     def create_proje(self, session, proje_adi, sunucu_ip, sunucu_port, kullanici_adi, kullanici_sifre, log_dosya_yolu, secim):
         new_proje = Proje(
             proje_adi=proje_adi,
@@ -27,14 +28,25 @@ class ProjeManager:
         #session.refresh(new_proje)
 
         return new_proje
+
     def get_all_projeler(self, session):
         return session.query(Proje).all()
+
 
     def get_proje_by_id(self, session, proje_id):
         return session.query(Proje).filter(Proje.id == proje_id).first()
 
     def get_all_proje_sayac(self, session):
+
+        gunlukSayacManager = GunlukSayacManager()
+
         today_date = int(datetime.now().strftime('%Y%m%d'))
+
+        projeler = session.query(Proje).all()
+
+        for proje in projeler:
+            gunlukSayacManager.control_and_create(session, proje.id, today_date)
+
 
         gelen_projeler = (
             session.query(Proje, GunlukSayac)
@@ -51,11 +63,12 @@ class ProjeManager:
                 'proje_adi': proje.proje_adi,
                 'sunucu_ip': proje.sunucu_ip,
                 'sunucu_port': proje.sunucu_port,
+                'secim': proje.secim,
                 'log_dosya_yolu': proje.log_dosya_yolu,
                 'kullanici_adi': proje.kullanici_adi,
                 'kullanici_sifre': proje.kullanici_sifre,
                 'gunluk_sayac_id': gunluk_sayac.id,
-                'gunluk_sayac': gunluk_sayac.sayac
+                'sira': gunluk_sayac.sira
             }
 
             proje_listesi.append(proje_dict)

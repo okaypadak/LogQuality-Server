@@ -6,7 +6,7 @@ class GunlukSayac(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     tarih = Column(Integer)
-    satir = Column(BigInteger)
+    sira = Column(BigInteger)
     proje_id = Column(Integer, ForeignKey('proje.id'))
 
     proje = relationship('Proje', foreign_keys=[proje_id])

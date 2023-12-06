@@ -1,37 +1,52 @@
 from models.GunlukSayacModel import GunlukSayac
 from ortakbaglanti import Base
 class GunlukSayacManager:
-    def __init__(self, session):
-        self.session = session
 
-    def create_gunluk_sayac(self, tarih, satir, proje_id):
-        new_gunluk_sayac = GunlukSayac(tarih=tarih, satir=satir, proje_id=proje_id)
-        self.session.add(new_gunluk_sayac)
-        self.session.commit()
-        self.session.refresh(new_gunluk_sayac)
+    def control_and_create(self, session, proje_id, tarih):
+
+        gunluk_sayac = (
+            session.query(GunlukSayac)
+            .filter(GunlukSayac.proje_id == proje_id, GunlukSayac.tarih == tarih)
+            .first()
+        )
+
+        if gunluk_sayac:
+            # Kayıt varsa işlem yapma
+            print(f"Kayıt zaten mevcut: {gunluk_sayac}")
+        else:
+            # Kayıt yoksa yeni bir kayıt oluştur ve sıfırla
+            yeni_kayit = GunlukSayac(tarih=tarih, sira=0, proje_id=proje_id)
+            session.add(yeni_kayit)
+            print(f"Yeni kayıt oluşturuldu: {yeni_kayit}")
+
+    def create_gunluk_sayac(self, session, tarih, sira, proje_id):
+        new_gunluk_sayac = GunlukSayac(tarih=tarih, sira=sira, proje_id=proje_id)
+        session.add(new_gunluk_sayac)
+        #session.commit()
+        session.refresh(new_gunluk_sayac)
         return new_gunluk_sayac
 
-    def read_gunluk_sayac(self, sayac_id):
-        return self.session.query(GunlukSayac).filter_by(id=sayac_id).first()
+    def read_gunluk_sayac(session, self, sayac_id):
+        return session.query(GunlukSayac).filter_by(id=sayac_id).first()
 
-    def update_gunluk_sayac(self, sayac_id, new_tarih=None, new_satir=None, new_proje_id=None):
-        gunluk_sayac = self.session.query(GunlukSayac).filter_by(id=sayac_id).first()
+    def update_gunluk_sayac(self, session, sayac_id, new_tarih=None, new_sira=None, new_proje_id=None):
+        gunluk_sayac = session.query(GunlukSayac).filter_by(id=sayac_id).first()
         if gunluk_sayac:
             if new_tarih is not None:
                 gunluk_sayac.tarih = new_tarih
-            if new_satir is not None:
-                gunluk_sayac.satir = new_satir
+            if new_sira is not None:
+                gunluk_sayac.sira = new_sira
             if new_proje_id is not None:
                 gunluk_sayac.proje_id = new_proje_id
-            self.session.commit()
-            self.session.refresh(gunluk_sayac)
+            #session.commit()
+            session.refresh(gunluk_sayac)
             return gunluk_sayac
         return None
 
-    def delete_gunluk_sayac(self, sayac_id):
-        gunluk_sayac = self.session.query(GunlukSayac).filter_by(id=sayac_id).first()
+    def delete_gunluk_sayac(self, session, sayac_id):
+        gunluk_sayac = session.query(GunlukSayac).filter_by(id=sayac_id).first()
         if gunluk_sayac:
-            self.session.delete(gunluk_sayac)
-            self.session.commit()
+            session.delete(gunluk_sayac)
+            session.commit()
             return True
         return False
