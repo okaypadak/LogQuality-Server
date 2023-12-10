@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship
+
 import ortakbaglanti as session
 from ortakbaglanti import Base
 
@@ -7,3 +9,6 @@ class Takip(Base):
     id = Column(Integer, primary_key=True, unique=True, index=True)
     hata = Column(String(255))
     adet = Column(String(255))
+    proje_id = Column(Integer, ForeignKey('proje.id'))
+
+    proje = relationship('Proje', foreign_keys=[proje_id])
