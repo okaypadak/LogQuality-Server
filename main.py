@@ -49,15 +49,35 @@ class LogProcessor:
             return None
 
         finally:
-            sftp.close()
-            ssh_client.close()
+            try:
+                if sftp:
+                    sftp.close()
+                if ssh_client:
+                    ssh_client.close()
+            except Exception as e:
+                print(f"Hata: {e}")
 
-    def tum_eslesmeler(self, satirlar):
+    def tum_eslesmeler(self, satirlar, proje_id):
+
+        takipManager = TakipManager()
+
         text = "\n".join(satirlar)
         pattern = re.compile(r"(?m)^.*?Exception.*(?:\n+^\s*at .*)+", re.MULTILINE)
         matches = pattern.finditer(text)
         match_list = [match.group() for match in matches]
-        return match_list
+
+        for match in match_list:
+            pattern = re.compile(r"\b\w+\.\w+\.+\w+Exception\b", re.MULTILINE)
+            exceptions = pattern.findall(match)
+            print(f"Yakalanan kelime: {exceptions}")
+
+            for exception in exceptions:
+                with session_scope() as session:
+                    takipManager.create_or_update_takip(session, exception, proje_id)
+
+
+
+
 
     def get_regex_values(self, desen, satir):
         eslesmeler = re.findall(desen, satir)
@@ -90,7 +110,7 @@ class LogProcessor:
 
     def ayristir(self, proje_id, secim, satirlar):
         if secim == 1:
-            self.tum_eslesmeler(satirlar)
+            self.tum_eslesmeler(satirlar, proje_id)
         elif secim == 2:
             self.satir_ayristir(satirlar, proje_id)
 
@@ -99,7 +119,6 @@ class LogProcessor:
             # list comprehension
             futures = {executor.submit(self.read_remote_log_file, proje): proje for proje in proje_listesi}
 
-            #gelen['proje_id'], gelen['secim'], lines, gelen['gunluk_sayac_id'], new_position
             for future in concurrent.futures.as_completed(futures):
                 proje_id, secim, lines, sayac_id, yeni_sira = future.result()
 
