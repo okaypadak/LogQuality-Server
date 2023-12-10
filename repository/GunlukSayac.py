@@ -39,7 +39,7 @@ class GunlukSayacManager:
             if new_proje_id is not None:
                 gunluk_sayac.proje_id = new_proje_id
             #session.commit()
-            session.refresh(gunluk_sayac)
+            #session.refresh(gunluk_sayac)
             return gunluk_sayac
         return None
 
