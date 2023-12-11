@@ -1,21 +1,22 @@
 import concurrent
 import json
-import logging
 from concurrent.futures import ThreadPoolExecutor
 import paramiko
 import schedule
 import time
 import re
-import rest
 import threading
-from ortakbaglanti import session_scope
+
+from controller import ProjeAnalysisController
+from models.OrtakBaglanti import session_scope
 from repository.ArananRegex import ArananRegexManager
 from repository.GunlukSayac import GunlukSayacManager
 from repository.Proje import ProjeManager
 from repository.Takip import TakipManager
+from util import LogProcess
 
 
-class LogProcessor:
+class logsTrack:
 
     def __init__(self):
         self.schedule_thread = threading.Thread(target=self.run_schedule)
@@ -25,7 +26,6 @@ class LogProcessor:
         schedule.every(3).minutes.do(self.proje_listesi)
 
     def read_remote_log_file(self, gelen):
-
         global sftp
 
         ssh_client = paramiko.SSHClient()
@@ -45,7 +45,7 @@ class LogProcessor:
             return gelen['proje_id'], gelen['secim'], lines, gelen['gunluk_sayac_id'], new_position
 
         except Exception as e:
-            print(f"Hata: {e}")
+            LogProcess.logger.error(f"Hata: {e}")
             return None
 
         finally:
@@ -55,10 +55,9 @@ class LogProcessor:
                 if ssh_client:
                     ssh_client.close()
             except Exception as e:
-                print(f"Hata: {e}")
+                LogProcess.logger.error(f"Hata: {e}")
 
     def tum_eslesmeler(self, satirlar, proje_id):
-
         takipManager = TakipManager()
 
         text = "\n".join(satirlar)
@@ -69,15 +68,11 @@ class LogProcessor:
         for match in match_list:
             pattern = re.compile(r"\b\w+\.\w+\.+\w+Exception\b", re.MULTILINE)
             exceptions = pattern.findall(match)
-            print(f"Yakalanan kelime: {exceptions}")
+            LogProcess.logger.debug(f"Yakalanan kelime: {exceptions}")
 
             for exception in exceptions:
                 with session_scope() as session:
                     takipManager.create_or_update_takip(session, exception, proje_id)
-
-
-
-
 
     def get_regex_values(self, desen, satir):
         eslesmeler = re.findall(desen, satir)
@@ -91,10 +86,10 @@ class LogProcessor:
             if value is not None:
                 return value
             else:
-                return f"{variable_name} bulunamadı."
+                LogProcess.logger.error(f"{variable_name} bulunamadı.")
 
         except json.JSONDecodeError as e:
-            return f"Hata: JSON çözümlenemedi. {e}"
+            LogProcess.logger.error(f"Hata: JSON .. {e}")
 
     def satir_ayristir(self, satirlar, proje_id):
         arananRegexManager = ArananRegexManager()
@@ -120,19 +115,24 @@ class LogProcessor:
             futures = {executor.submit(self.read_remote_log_file, proje): proje for proje in proje_listesi}
 
             for future in concurrent.futures.as_completed(futures):
-                proje_id, secim, lines, sayac_id, yeni_sira = future.result()
+                try:
+                    proje_id, secim, lines, sayac_id, yeni_sira = future.result()
 
-                gunlukSayacManager = GunlukSayacManager()
+                    gunlukSayacManager = GunlukSayacManager()
 
-                with session_scope() as session:
-                    gunlukSayacManager.update_gunluk_sayac(session, sayac_id, None, yeni_sira, None)
+                    with session_scope() as session:
+                        gunlukSayacManager.update_gunluk_sayac(session, sayac_id, None, yeni_sira, None)
 
-                self.ayristir(proje_id, secim, lines)
+                    self.ayristir(proje_id, secim, lines)
+
+                except Exception as e:
+                    LogProcess.logger.error(f"Hata: Future doğru sonuç türetmedi - {e}")
 
     def proje_listesi(self):
         with session_scope() as session:
             proje = ProjeManager()
             projeler = proje.get_all_proje_sayac(session)
+            LogProcess.logger.info("Proje listesi çekildi")
 
         self.process_log_files(projeler)
 
@@ -142,11 +142,11 @@ class LogProcessor:
             time.sleep(1)
 
     def run_rest(self):
-        rest.app.run()
+        ProjeAnalysisController.app.run()
 
 
 if __name__ == "__main__":
-    log_processor = LogProcessor()
+    log_processor = logsTrack()
 
     # Start both threads
     log_processor.schedule_thread.start()
