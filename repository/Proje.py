@@ -76,10 +76,10 @@ class ProjeManager:
         return proje_listesi
 
     def update_proje(self, session, proje_id, new_values):
-        proje = self.session.query(Proje).filter(Proje.id == proje_id).first()
+        proje = session.query(Proje).filter(Proje.id == proje_id).first()
         for key, value in new_values.items():
             setattr(proje, key, value)
-        self.session.commit()
+        session.commit()
         return proje
 
     def delete_proje(self, session, proje_id):

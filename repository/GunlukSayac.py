@@ -1,5 +1,6 @@
 from models.GunlukSayacModel import GunlukSayac
-from ortakbaglanti import Base
+
+
 class GunlukSayacManager:
 
     def control_and_create(self, session, proje_id, tarih):
