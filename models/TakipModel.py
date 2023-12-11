@@ -1,8 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
-import ortakbaglanti as session
-from ortakbaglanti import Base
+from models.OrtakBaglanti import Base
 
 class Takip(Base):
     __tablename__ = 'takip'

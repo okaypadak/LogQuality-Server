@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
-from ortakbaglanti import Base
+from models.OrtakBaglanti import Base
 
 class ArananRegex(Base):
     __tablename__ = 'aranan_degex'

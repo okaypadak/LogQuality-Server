@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String
-from ortakbaglanti import Base
+from models.OrtakBaglanti import Base
 
 # Tablo sınıfını tanımla
 class DigerKayitlar(Base):

@@ -1,8 +1,7 @@
 from sqlalchemy import Column, Integer, TIMESTAMP, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
-import ortakbaglanti as session
-from ortakbaglanti import Base
+from models.OrtakBaglanti import Base
 class TakipZaman(Base):
     __tablename__ = 'takip_zaman'
 

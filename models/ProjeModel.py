@@ -1,10 +1,7 @@
-from datetime import datetime
-
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import relationship
 
-from ortakbaglanti import Base
-from models.GunlukSayacModel import GunlukSayac
+from models.OrtakBaglanti import Base
+
 
 class Proje(Base):
     __tablename__ = 'proje'

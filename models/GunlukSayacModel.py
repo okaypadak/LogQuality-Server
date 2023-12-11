@@ -1,6 +1,6 @@
-from sqlalchemy import create_engine, Column, Integer, String, BigInteger, ForeignKey
+from sqlalchemy import Column, Integer, BigInteger, ForeignKey
 from sqlalchemy.orm import relationship
-from ortakbaglanti import Base
+from models.OrtakBaglanti import Base
 class GunlukSayac(Base):
     __tablename__ = 'gunluk_sayac'
 
