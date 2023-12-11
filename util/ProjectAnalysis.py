@@ -44,7 +44,3 @@ def list_methods_in_all_classes(project_directory):
                     print(f'Class: {java_class.name}')
                     for method_name in java_class.methods:
                         print(f'\tMethod: {method_name}')
-
-project_directory = '/path/to/your/java/project'  # Java proje dizinini buraya ekleyin
-
-list_methods_in_all_classes(project_directory)
