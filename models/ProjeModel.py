@@ -13,3 +13,6 @@ class Proje(Base):
     kullanici_sifre = Column(String)
     log_dosya_yolu = Column(String)
     secim = Column(Integer)
+    git_url = Column(String)
+    hash_id = Column(String)
+    aktif = Column(Integer)

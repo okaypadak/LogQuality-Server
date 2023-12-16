@@ -1,21 +1,10 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Blueprint
 import os
 import zipfile
 
-app = Flask(__name__)
+upload = Blueprint('upload', __name__)
 
-data = {'name': 'John', 'age': 30}
-
-@app.route('/get_data', methods=['GET'])
-def get_data():
-    key = request.args.get('key')
-    default_value = request.args.get('default', None)
-
-    result = data.get(key, default_value)
-
-    return jsonify({'result': result})
-
-@app.route('/upload', methods=['POST'])
+@upload.route('/upload', methods=['POST'])
 def upload_file():
     # Gelen dosyayı kontrol et
     if 'file' not in request.files:

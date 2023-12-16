@@ -6,14 +6,15 @@ import schedule
 import time
 import re
 import threading
-
-from controller import ProjeAnalysisController
 from models.OrtakBaglanti import session_scope
 from repository.ArananRegex import ArananRegexManager
 from repository.GunlukSayac import GunlukSayacManager
 from repository.Proje import ProjeManager
 from repository.Takip import TakipManager
-from util import LogProcess
+from util import FlaskRun
+from util import LogProcess as log
+from util.GitRepoManager import GitRepoManager
+from util.JavaCodeAnalyzer import JavaCodeAnalyzer
 
 
 class logsTrack:
@@ -22,11 +23,14 @@ class logsTrack:
         self.schedule_thread = threading.Thread(target=self.run_schedule)
         self.rest_thread = threading.Thread(target=self.run_rest)
         self.proje_listesi_thread = threading.Thread(target=self.proje_listesi)
+        self.run_git_repo_thread = threading.Thread(target=self.run_git_repo)
 
         schedule.every(3).minutes.do(self.proje_listesi)
+        schedule.every(3).minutes.do(self.run_git_repo)
 
     def read_remote_log_file(self, gelen):
-        global sftp
+
+        sftp = None
 
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -45,8 +49,8 @@ class logsTrack:
             return gelen['proje_id'], gelen['secim'], lines, gelen['gunluk_sayac_id'], new_position
 
         except Exception as e:
-            LogProcess.logger.error(f"Hata: {e}")
-            return None
+            #raise RuntimeError(f"{gelen['proje_adi']} SSH bağlantısı sağlanamadı.")
+            log.logger.error(f"{gelen['proje_adi']} projesinde SSH bağlantısı sağlanamadı")
 
         finally:
             try:
@@ -55,7 +59,7 @@ class logsTrack:
                 if ssh_client:
                     ssh_client.close()
             except Exception as e:
-                LogProcess.logger.error(f"Hata: {e}")
+                log.logger.error(f"Hata: SSH Bağlantısı yapılmadı")
 
     def tum_eslesmeler(self, satirlar, proje_id):
         takipManager = TakipManager()
@@ -68,7 +72,6 @@ class logsTrack:
         for match in match_list:
             pattern = re.compile(r"\b\w+\.\w+\.+\w+Exception\b", re.MULTILINE)
             exceptions = pattern.findall(match)
-            LogProcess.logger.debug(f"Yakalanan kelime: {exceptions}")
 
             for exception in exceptions:
                 with session_scope() as session:
@@ -86,10 +89,10 @@ class logsTrack:
             if value is not None:
                 return value
             else:
-                LogProcess.logger.error(f"{variable_name} bulunamadı.")
+                log.logger.error(f"{variable_name} bulunamadı.")
 
         except json.JSONDecodeError as e:
-            LogProcess.logger.error(f"Hata: JSON .. {e}")
+            log.logger.error(f"Hata: JSON .. {e}")
 
     def satir_ayristir(self, satirlar, proje_id):
         arananRegexManager = ArananRegexManager()
@@ -116,25 +119,33 @@ class logsTrack:
 
             for future in concurrent.futures.as_completed(futures):
                 try:
-                    proje_id, secim, lines, sayac_id, yeni_sira = future.result()
+                    if future.result() is not None:
 
-                    gunlukSayacManager = GunlukSayacManager()
+                        proje_id, secim, lines, sayac_id, yeni_sira = future.result()
 
-                    with session_scope() as session:
-                        gunlukSayacManager.update_gunluk_sayac(session, sayac_id, None, yeni_sira, None)
+                        if proje_id is not None:
+                            gunlukSayacManager = GunlukSayacManager()
 
-                    self.ayristir(proje_id, secim, lines)
+                            with session_scope() as session:
+                                gunlukSayacManager.update_gunluk_sayac(session, sayac_id, None, yeni_sira, None)
 
-                except Exception as e:
-                    LogProcess.logger.error(f"Hata: Future doğru sonuç türetmedi - {e}")
+                            self.ayristir(proje_id, secim, lines)
+
+                except RuntimeError as e:
+                    log.logger.error(f"Hata: Future doğru sonuç türetmedi")
+
 
     def proje_listesi(self):
         with session_scope() as session:
             proje = ProjeManager()
             projeler = proje.get_all_proje_sayac(session)
-            LogProcess.logger.info("Proje listesi çekildi")
+            proje.generate_short_hash_id()
+
+            log.logger.info("Proje listesi çekildi")
 
         self.process_log_files(projeler)
+
+
 
     def run_schedule(self):
         while True:
@@ -142,7 +153,22 @@ class logsTrack:
             time.sleep(1)
 
     def run_rest(self):
-        ProjeAnalysisController.app.run()
+        FlaskRun.app.run()
+
+    def run_git_repo(self):
+
+        gitRepoManager = GitRepoManager()
+
+        with session_scope() as session:
+            proje = ProjeManager()
+            projeler = proje.get_all_projeler(session)
+
+            for proje in projeler:
+                repo_name, repo_path = gitRepoManager.clone_or_pull_repo(proje.git_url)
+
+                analyzer = JavaCodeAnalyzer(repo_path)
+                result = analyzer.analyze_project()
+                print(result)
 
 
 if __name__ == "__main__":
@@ -150,10 +176,12 @@ if __name__ == "__main__":
 
     # Start both threads
     log_processor.schedule_thread.start()
-    # log_processor.rest_thread.start()
+    log_processor.rest_thread.start()
     log_processor.proje_listesi_thread.start()
+    log_processor.run_git_repo_thread.start()
 
     # Wait for both threads to finish
     log_processor.schedule_thread.join()
-    # log_processor.rest_thread.join()
+    log_processor.rest_thread.join()
     log_processor.proje_listesi_thread.join()
+    log_processor.run_git_repo_thread.join()
