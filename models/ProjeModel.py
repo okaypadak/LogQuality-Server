@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import relationship
 
 from models.OrtakBaglanti import Base
 
@@ -16,3 +17,5 @@ class Proje(Base):
     git_url = Column(String)
     hash_id = Column(String)
     aktif = Column(Integer)
+
+    siniflar = relationship('ProjeSinif', back_populates='proje')

@@ -10,6 +10,7 @@ from models.OrtakBaglanti import session_scope
 from repository.ArananRegex import ArananRegexManager
 from repository.GunlukSayac import GunlukSayacManager
 from repository.Proje import ProjeManager
+from repository.ProjeSinifMetod import ProjeSinifMetodManager
 from repository.Takip import TakipManager
 from util import FlaskRun
 from util import LogProcess as log
@@ -169,6 +170,9 @@ class logsTrack:
                 analyzer = JavaCodeAnalyzer(repo_path)
                 result = analyzer.analyze_project()
                 print(result)
+                with session_scope() as session:
+                    projeSinifMetodManager = ProjeSinifMetodManager()
+                    projeSinifMetodManager.create_list(session, result, proje.id)
 
 
 if __name__ == "__main__":
@@ -176,12 +180,12 @@ if __name__ == "__main__":
 
     # Start both threads
     log_processor.schedule_thread.start()
-    log_processor.rest_thread.start()
+    #log_processor.rest_thread.start()
     log_processor.proje_listesi_thread.start()
     log_processor.run_git_repo_thread.start()
 
     # Wait for both threads to finish
     log_processor.schedule_thread.join()
-    log_processor.rest_thread.join()
+    #log_processor.rest_thread.join()
     log_processor.proje_listesi_thread.join()
     log_processor.run_git_repo_thread.join()
