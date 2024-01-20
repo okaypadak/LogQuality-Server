@@ -10,5 +10,4 @@ class ArananJson(Base):
     degisken = Column(String(255), nullable=False)
     proje_id = Column(Integer, ForeignKey('proje.id'))
 
-    # Define relationship
     proje = relationship('Proje', foreign_keys=[proje_id])

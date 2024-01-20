@@ -13,12 +13,21 @@ class GitRepoManager:
 
         if os.path.exists(repo_path):
             log.logger.info(f"{repo_path} dizini zaten var. Pull yapılıyor...")
-            subprocess.run(['git', 'pull'], cwd=repo_path)
+            result = subprocess.run(['git', 'pull'], cwd=repo_path, capture_output=True, text=True)
+
+            if "Already up to date" in result.stdout:
+                log.logger.info(f"{repo_path} dizini zaten güncel.")
+                update = False
+            else:
+                log.logger.info(result.stdout)
+                log.logger.error(result.stderr)
+                update = True
         else:
             log.logger.info(f"{repo_path} dizini bulunamadı. Klonlama yapılıyor...")
             subprocess.run(['git', 'clone', repo_url, repo_path])
+            update = True
 
-        return repo_name, repo_path
+        return update, repo_path
 
     def fetch_and_pull_if_needed(self, repo_url):
         repo_name = repo_url.split('/')[-1].replace('.git', '')

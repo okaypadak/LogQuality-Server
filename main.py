@@ -165,14 +165,15 @@ class logsTrack:
             projeler = proje.get_all_projeler(session)
 
             for proje in projeler:
-                repo_name, repo_path = gitRepoManager.clone_or_pull_repo(proje.git_url)
+                update, repo_path = gitRepoManager.clone_or_pull_repo(proje.git_url)
 
-                analyzer = JavaCodeAnalyzer(repo_path)
-                result = analyzer.analyze_project()
-                print(result)
-                with session_scope() as session:
-                    projeSinifMetodManager = ProjeSinifMetodManager()
-                    projeSinifMetodManager.create_list(session, result, proje.id)
+                if update:
+                    analyzer = JavaCodeAnalyzer(repo_path)
+                    result = analyzer.analyze_project()
+                    print(result)
+                    with session_scope() as session:
+                        projeSinifMetodManager = ProjeSinifMetodManager()
+                        projeSinifMetodManager.create_list(session, result, proje.id)
 
 
 if __name__ == "__main__":
@@ -180,12 +181,12 @@ if __name__ == "__main__":
 
     # Start both threads
     log_processor.schedule_thread.start()
-    #log_processor.rest_thread.start()
+    log_processor.rest_thread.start()
     log_processor.proje_listesi_thread.start()
     log_processor.run_git_repo_thread.start()
 
     # Wait for both threads to finish
     log_processor.schedule_thread.join()
-    #log_processor.rest_thread.join()
+    log_processor.rest_thread.join()
     log_processor.proje_listesi_thread.join()
     log_processor.run_git_repo_thread.join()

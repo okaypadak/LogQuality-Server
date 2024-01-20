@@ -7,4 +7,5 @@ class ProjeMetod(Base):
     id = Column(Integer, primary_key=True)
     ad = Column(String)
     proje_sinif_id = Column(Integer, ForeignKey('proje_sinif.id'))
+
     sinif = relationship('ProjeSinif', back_populates='metodlar')

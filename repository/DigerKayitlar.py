@@ -4,6 +4,7 @@ class DigerKayitlarManager:
 
     def __init__(self, session):
         self.session = session
+
     def create_diger_kayit(self, session, degisken, deger):
         new_diger_kayit = DigerKayitlar(degisken=degisken, deger=deger)
         self.session.add(new_diger_kayit)
