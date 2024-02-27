@@ -18,15 +18,13 @@ from util.GitRepoManager import GitRepoManager
 from util.JavaCodeAnalyzer import JavaCodeAnalyzer
 
 
-class logsTrack:
+class logsQuality:
 
     def __init__(self):
 
-        reader = sshReader()
-
         self.schedule_thread = threading.Thread(target=self.run_schedule)
         self.rest_thread = threading.Thread(target=self.run_rest)
-        self.proje_listesi_thread = threading.Thread(target=reader.proje_listesi)
+        self.ssh_start_thread = threading.Thread(target=sshReader.start)
         self.run_git_repo_thread = threading.Thread(target=self.run_git_repo)
 
         schedule.every(3).minutes.do(reader.proje_listesi)
@@ -67,7 +65,7 @@ if __name__ == "__main__":
     # Start both threads
     log_processor.schedule_thread.start()
     log_processor.rest_thread.start()
-    log_processor.proje_listesi_thread.start()
+    log_processor.ssh_start_thread.start()
     log_processor.run_git_repo_thread.start()
 
     # Wait for both threads to finish

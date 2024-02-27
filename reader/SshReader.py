@@ -89,7 +89,10 @@ class sshReader:
         elif secim == 2:
             self.satir_ayristir(satirlar, proje_id)
 
-    def process_log_files(self, proje_listesi):
+    def start(self):
+
+        proje_listesi = project.list()
+
         with ThreadPoolExecutor() as executor:
             futures = {executor.submit(self.read_remote_log_file, proje): proje for proje in proje_listesi}
 
@@ -109,13 +112,3 @@ class sshReader:
 
                 except RuntimeError as e:
                     log.logger.error(f"Hata: Future doğru sonuç türetmedi")
-
-    def proje_listesi(self):
-        with session_scope() as session:
-            proje = ProjeManager()
-            projeler = proje.get_all_proje_sayac(session)
-            proje.generate_short_hash_id()
-
-            log.logger.info("Proje listesi çekildi")
-
-        self.process_log_files(projeler)
