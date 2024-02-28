@@ -13,7 +13,6 @@ from repository.Proje import ProjeManager
 from repository.ProjeSinifMetod import ProjeSinifMetodManager
 from repository.Takip import TakipManager
 from util import FlaskRun
-from util import LogProcess as log
 from util.GitRepoManager import GitRepoManager
 from util.JavaCodeAnalyzer import JavaCodeAnalyzer
 
@@ -61,7 +60,7 @@ class logsQuality:
 
 if __name__ == "__main__":
     log_processor = logsTrack()
-
+    log.write()
     # Start both threads
     log_processor.schedule_thread.start()
     log_processor.rest_thread.start()

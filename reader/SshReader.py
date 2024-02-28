@@ -27,7 +27,7 @@ class sshReader:
             return gelen['proje_id'], gelen['secim'], lines, gelen['gunluk_sayac_id'], new_position
 
         except Exception as e:
-            log.logger.error(f"{gelen['proje_adi']} projesinde SSH bağlantısı sağlanamadı")
+            logging.error(f"{gelen['proje_adi']} projesinde SSH bağlantısı sağlanamadı")
 
         finally:
             try:
@@ -36,9 +36,9 @@ class sshReader:
                 if ssh_client:
                     ssh_client.close()
             except Exception as e:
-                log.logger.error(f"Hata: SSH Bağlantısı yapılmadı")
+                logging.error(f"Hata: SSH Bağlantısı yapılmadı")
 
-    def tum_eslesmeler(self, satirlar, proje_id):
+    def tumu(self, satirlar, proje_id):
         takipManager = TakipManager()
 
         text = "\n".join(satirlar)
@@ -54,24 +54,11 @@ class sshReader:
                 with session_scope() as session:
                     takipManager.create_or_update_takip(session, exception, proje_id)
 
-    def get_regex_values(self, desen, satir):
+    def regex_values(self, desen, satir):
         eslesmeler = re.findall(desen, satir)
         return eslesmeler
 
-    def get_json_values(self, json_str, variable_name):
-        try:
-            data = json.loads(json_str)
-            value = data.get(variable_name)
-
-            if value is not None:
-                return value
-            else:
-                log.logger.error(f"{variable_name} bulunamadı.")
-
-        except json.JSONDecodeError as e:
-            log.logger.error(f"Hata: JSON .. {e}")
-
-    def satir_ayristir(self, satirlar, proje_id):
+    def satir(self, satirlar, proje_id):
         arananRegexManager = ArananRegexManager()
         takipManager = TakipManager()
 
@@ -79,15 +66,15 @@ class sshReader:
 
         if satirlar is not None:
             for satir in satirlar:
-                gelen_hata = self.get_regex_values("java.*.Exception", satir)
+                gelen_hata = self.regex_values("java.*.Exception", satir)
                 with session_scope() as session:
                     takipManager.create_or_update_takip(session, gelen_hata)
 
     def ayristir(self, proje_id, secim, satirlar):
         if secim == 1:
-            self.tum_eslesmeler(satirlar, proje_id)
+            self.tumu(satirlar, proje_id)
         elif secim == 2:
-            self.satir_ayristir(satirlar, proje_id)
+            self.satir(satirlar, proje_id)
 
     def start(self):
 
@@ -111,4 +98,4 @@ class sshReader:
                             self.ayristir(proje_id, secim, lines)
 
                 except RuntimeError as e:
-                    log.logger.error(f"Hata: Future doğru sonuç türetmedi")
+                    logging.error(f"Hata: Future doğru sonuç türetmedi")
