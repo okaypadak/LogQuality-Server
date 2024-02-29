@@ -9,7 +9,7 @@ class ElasticSearchReader:
         logs = []
         for success, info in streaming_bulk(
                 client=es,
-                index=gelen['index_name'],
+                index=proje['index_name'],
 
                 query={"query": {"range": {"@timestamp": {"gte": "now-1s"}}}}
         ):
@@ -19,7 +19,7 @@ class ElasticSearchReader:
                 log_dict = info['index']['_source'].to_dict()
                 logs.append(log_dict)
 
-        return gelen['proje_id'], logs
+        return proje['proje_id'], logs
 
 
     def start(self):

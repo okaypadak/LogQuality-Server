@@ -7,5 +7,3 @@ class project:
             proje.generate_short_hash_id()
 
             logger.info("Proje listesi çekildi")
-
-        sshReader.process_log_files(projeler)
