@@ -17,7 +17,7 @@ from util.GitRepoManager import GitRepoManager
 from util.JavaCodeAnalyzer import JavaCodeAnalyzer
 
 
-class logsQuality:
+class logQuality:
 
     def __init__(self):
 
@@ -59,7 +59,7 @@ class logsQuality:
 
 
 if __name__ == "__main__":
-    log_processor = logsTrack()
+    log_processor = logQuality()
     log.write()
     # Start both threads
     log_processor.schedule_thread.start()

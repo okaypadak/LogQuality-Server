@@ -27,7 +27,7 @@ class sshReader:
             return gelen['proje_id'], gelen['secim'], lines, gelen['gunluk_sayac_id'], new_position
 
         except Exception as e:
-            logging.error(f"{gelen['proje_adi']} projesinde SSH bağlantısı sağlanamadı")
+            logger.error(f"{gelen['proje_adi']} projesinde SSH bağlantısı sağlanamadı")
 
         finally:
             try:
@@ -36,7 +36,7 @@ class sshReader:
                 if ssh_client:
                     ssh_client.close()
             except Exception as e:
-                logging.error(f"Hata: SSH Bağlantısı yapılmadı")
+                logger.error(f"Hata: SSH Bağlantısı yapılmadı")
 
     def tumu(self, satirlar, proje_id):
         takipManager = TakipManager()
@@ -78,10 +78,8 @@ class sshReader:
 
     def start(self):
 
-        proje_listesi = project.list()
-
         with ThreadPoolExecutor() as executor:
-            futures = {executor.submit(self.read_remote_log_file, proje): proje for proje in proje_listesi}
+            futures = {executor.submit(self.read_remote_log_file, proje): proje for proje in project.list()}
 
             for future in as_completed(futures):
                 try:
@@ -98,4 +96,4 @@ class sshReader:
                             self.ayristir(proje_id, secim, lines)
 
                 except RuntimeError as e:
-                    logging.error(f"Hata: Future doğru sonuç türetmedi")
+                    logger.error(f"Hata: Future doğru sonuç türetmedi")

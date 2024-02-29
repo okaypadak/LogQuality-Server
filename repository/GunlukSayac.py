@@ -23,7 +23,7 @@ class GunlukSayacManager:
         session.refresh(new_gunluk_sayac)
         return new_gunluk_sayac
 
-    def read_gunluk_sayac(session, self, sayac_id):
+    def read_gunluk_sayac(self, session, sayac_id):
         return session.query(GunlukSayac).filter_by(id=sayac_id).first()
 
     def update_gunluk_sayac(self, session, sayac_id, new_tarih=None, new_sira=None, new_proje_id=None):
