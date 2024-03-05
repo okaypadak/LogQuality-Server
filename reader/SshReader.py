@@ -1,12 +1,15 @@
 import paramiko
 import re
-import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from contextlib import contextmanager
+from models.OrtakBaglanti import session_scope
+from reader.ProjectList import project
+from repository.ArananRegex import ArananRegexManager
+from repository.GunlukSayac import GunlukSayacManager
+from repository.Takip import TakipManager
+from util.LogProcess import logger
+
 
 class sshReader:
-    def __init__(self):
-        pass
 
     def read_remote_log_file(self, gelen):
         sftp = None
