@@ -1,25 +1,47 @@
+
+import time
+from concurrent.futures import as_completed, ThreadPoolExecutor
+from datetime import datetime
 from elasticsearch import Elasticsearch
-from elasticsearch.helpers import streaming_bulk
+from elasticsearch.helpers import scan
+from reader.ProjectList import project
+from util.LogProcess import logger
+
 
 class ElasticSearchReader:
     def __init__(self):
-        self.es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
+        self.es = Elasticsearch([{'host': 'localhost', 'port': 9200, 'scheme': 'http'}])
+
 
     def streaming(self, proje):
-        logs = []
-        for success, info in streaming_bulk(
-                client=es,
-                index=proje['index_name'],
 
-                query={"query": {"range": {"@timestamp": {"gte": "now-1s"}}}}
-        ):
-            if not success:
-                print(f'Error indexing document: {info}')
-            else:
-                log_dict = info['index']['_source'].to_dict()
-                logs.append(log_dict)
+        while True:
+            
+            today = datetime.now().strftime("%Y-%m-%d")
+            start_of_day = today + "T00:00:00"
+            end_of_day = today + "T23:59:59"
 
-        return proje['proje_id'], logs
+            query = {
+                "query": {
+                    "range": {
+                        "@timestamp": {
+                            "gte": start_of_day,
+                            "lte": end_of_day
+                        }
+                    }
+                }
+            }
+
+            logs = []
+
+
+            logs = scan(self.es, query=query, index="testapplogs")
+
+            for log in logs:
+                print(log['_source'])
+
+            time.sleep(1)
+
 
 
     def start(self):
@@ -29,13 +51,12 @@ class ElasticSearchReader:
 
             for future in as_completed(futures):
                 try:
-                    if future.result() is not None:
+                    if future.exception() is None:  # Hata yoksa
+                        proje_id, logs = future.result()
 
-                        proje_id, lines = future.result()
+                        if logs is not None:
+                            logger.info("geldi")
+                            # self.ayristir(proje_id, lines)
 
-                        if proje_id is not None:
-
-                            self.ayristir(proje_id, lines)
-
-                except RuntimeError as e:
-                    logger.error(f"Hata: Future doğru sonuç türetmedi")
+                except Exception as e:
+                    logger.error(f"Hata: {e}")

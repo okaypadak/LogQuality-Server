@@ -70,8 +70,10 @@ class ProjeManager:
                 'log_dosya_yolu': proje.log_dosya_yolu,
                 'kullanici_adi': proje.kullanici_adi,
                 'kullanici_sifre': proje.kullanici_sifre,
+                'index_name': proje.index_name,
                 'gunluk_sayac_id': gunluk_sayac.id,
                 'sira': gunluk_sayac.sira
+
             }
 
             proje_listesi.append(proje_dict)

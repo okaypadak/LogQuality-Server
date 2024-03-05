@@ -1,20 +1,17 @@
-import concurrent
-import json
-from concurrent.futures import ThreadPoolExecutor
-import paramiko
+
 import schedule
 import time
-import re
+
 import threading
 from models.OrtakBaglanti import session_scope
-from repository.ArananRegex import ArananRegexManager
-from repository.GunlukSayac import GunlukSayacManager
+from reader.ElasticSearchReader import ElasticSearchReader
+from reader.SshReader import sshReader
 from repository.Proje import ProjeManager
 from repository.ProjeSinifMetod import ProjeSinifMetodManager
-from repository.Takip import TakipManager
 from util import FlaskRun
 from util.GitRepoManager import GitRepoManager
 from util.JavaCodeAnalyzer import JavaCodeAnalyzer
+
 
 
 class logQuality:
@@ -23,10 +20,10 @@ class logQuality:
 
         self.schedule_thread = threading.Thread(target=self.run_schedule)
         self.rest_thread = threading.Thread(target=self.run_rest)
-        self.ssh_start_thread = threading.Thread(target=sshReader.start)
+        self.ssh_start_thread = threading.Thread(target=sshReader().start)
         self.run_git_repo_thread = threading.Thread(target=self.run_git_repo)
 
-        schedule.every(3).minutes.do(reader.proje_listesi)
+        schedule.every(3).minutes.do(sshReader().start)
         schedule.every(3).minutes.do(self.run_git_repo)
 
 
@@ -59,16 +56,20 @@ class logQuality:
 
 
 if __name__ == "__main__":
+
+    es_reader = ElasticSearchReader()
+    es_reader.start()
+
     log_processor = logQuality()
-    log.write()
-    # Start both threads
     log_processor.schedule_thread.start()
-    log_processor.rest_thread.start()
+    #log_processor.rest_thread.start()
     log_processor.ssh_start_thread.start()
     log_processor.run_git_repo_thread.start()
 
-    # Wait for both threads to finish
     log_processor.schedule_thread.join()
-    log_processor.rest_thread.join()
-    log_processor.proje_listesi_thread.join()
+    #log_processor.rest_thread.join()
+    log_processor.ssh_start_thread.join()
     log_processor.run_git_repo_thread.join()
+
+
+
