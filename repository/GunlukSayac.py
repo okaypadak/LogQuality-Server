@@ -1,5 +1,8 @@
 from models.GunlukSayacModel import GunlukSayac
 from util import LogProcess as log
+from util.LogProcess import logger
+
+
 class GunlukSayacManager:
     def control_and_create(self, session, proje_id, tarih):
 
@@ -10,11 +13,11 @@ class GunlukSayacManager:
         )
 
         if gunluk_sayac:
-            log.logger.info(f"Kayıt zaten mevcut: {gunluk_sayac.proje_id}")
+            logger.info(f"Kayıt zaten mevcut: {gunluk_sayac.proje_id}")
         else:
             yeni_kayit = GunlukSayac(tarih=tarih, sira=0, proje_id=proje_id)
             session.add(yeni_kayit)
-            log.logger.info(f"Yeni kayıt oluşturuldu: {yeni_kayit}")
+            logger.info(f"Yeni kayıt oluşturuldu: {yeni_kayit}")
 
     def create_gunluk_sayac(self, session, tarih, sira, proje_id):
         new_gunluk_sayac = GunlukSayac(tarih=tarih, sira=sira, proje_id=proje_id)

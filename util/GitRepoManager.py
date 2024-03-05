@@ -1,5 +1,8 @@
 import subprocess
 import os
+from util import LogProcess as log
+from util.LogProcess import logger
+
 
 class GitRepoManager:
 
