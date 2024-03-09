@@ -11,22 +11,20 @@ class ElasticSearchReader:
     def __init__(self):
         self.es = Elasticsearch([{'host': 'localhost', 'port': 9200, 'scheme': 'http'}])
         self.log_queue = queue.Queue()
+        self.seen_ids = set()
 
-    def ayristir(self, proje_id, logs):
-        global doc_id
+    def ayristir(self, log_id, logs):
+
         for log in logs:
             logSource = log['_source']
-            if logSource['level'] == 'WARN' and logSource.get('processed', False) is not True:
+            if logSource['level'] == 'WARN' or logSource['level'] == 'ERROR' and logSource.get('processed', False):
                 logger.info(f"Warning log detected: {log}")
                 try:
-
-                    doc_id = log['_id']
-                    doc = self.es.get(index=log['_index'], id=doc_id)
-
+                    doc = self.es.get(index=log['_index'], id=log_id)
                     doc['_source']['processed'] = True
-                    self.es.update(index=log['_index'], id=doc_id, body={'doc': doc['_source']})
+                    self.es.update(index=log['_index'], id=log_id, body={'doc': doc['_source']})
                 except NotFoundError:
-                    logger.error(f"Document with ID {doc_id} not found.")
+                    logger.error(f"Document with ID {log_id} not found.")
 
     def streaming(self, proje):
         while True:
@@ -48,15 +46,18 @@ class ElasticSearchReader:
             logs = scan(self.es, query=query, index=proje['index_name'])
 
             for log in logs:
-                self.log_queue.put((proje['proje_id'], log))
+                log_id = log['_id']
+                if log_id not in self.seen_ids:
+                    self.seen_ids.add(log_id)
+                    self.log_queue.put((log['_id'], log))
 
             time.sleep(1)
 
     def process_logs(self):
         while True:
             if not self.log_queue.empty():
-                proje_id, log = self.log_queue.get()
-                self.ayristir(proje_id, [log])
+                log_id, log = self.log_queue.get()
+                self.ayristir(log_id, [log])
             else:
                 time.sleep(1)
 
