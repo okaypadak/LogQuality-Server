@@ -7,6 +7,7 @@ from reader.ProjectList import project
 from util.LogProcess import logger
 import queue
 
+
 class ElasticSearchReader:
     def __init__(self):
         self.es = Elasticsearch([{'host': 'localhost', 'port': 9200, 'scheme': 'http'}])
@@ -17,7 +18,7 @@ class ElasticSearchReader:
 
         for log in logs:
             logSource = log['_source']
-            if logSource['level'] == 'WARN' or logSource['level'] == 'ERROR' and logSource.get('processed', False):
+            if logSource['level'] in ('WARN','ERROR') and logSource['processed'] is False:
                 logger.info(f"Warning log detected: {log}")
                 try:
                     doc = self.es.get(index=log['_index'], id=log_id)
@@ -65,4 +66,3 @@ class ElasticSearchReader:
         with ThreadPoolExecutor() as executor:
             futures = {executor.submit(self.streaming, proje): proje for proje in project.list()}
             executor.submit(self.process_logs)
-
