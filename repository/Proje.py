@@ -1,15 +1,10 @@
 import base64
 
 from models.ProjeModel import Proje
-from models.GunlukSayacModel import GunlukSayac
 import hashlib
 import time
-
-# CRUD işlemleri için fonksiyonlar
 from datetime import datetime
 
-from repository.GunlukSayac import GunlukSayacManager
-from repository.Takip import TakipManager
 
 
 class ProjeManager:
@@ -40,40 +35,17 @@ class ProjeManager:
     def get_proje_by_id(self, session, proje_id):
         return session.query(Proje).filter(Proje.id == proje_id).first()
 
-    def get_all_proje_sayac(self, session):
-
-        gunlukSayacManager = GunlukSayacManager()
-
-        today_date = int(datetime.now().strftime('%Y%m%d'))
+    def get_all_proje_to_dict(self, session):
 
         projeler = session.query(Proje).all()
 
-        for proje in projeler:
-            gunlukSayacManager.control_and_create(session, proje.id, today_date)
-
-        gelen_projeler = (
-            session.query(Proje, GunlukSayac)
-            .join(GunlukSayac, Proje.id == GunlukSayac.proje_id)
-            .filter(GunlukSayac.tarih == today_date)
-            .all()
-        )
-
         proje_listesi = []
 
-        for proje, gunluk_sayac in gelen_projeler:
+        for proje in projeler:
             proje_dict = {
                 'proje_id': proje.id,
                 'proje_adi': proje.proje_adi,
-                'sunucu_ip': proje.sunucu_ip,
-                'sunucu_port': proje.sunucu_port,
-                'secim': proje.secim,
-                'log_dosya_yolu': proje.log_dosya_yolu,
-                'kullanici_adi': proje.kullanici_adi,
-                'kullanici_sifre': proje.kullanici_sifre,
                 'index_name': proje.index_name,
-                'gunluk_sayac_id': gunluk_sayac.id,
-                'sira': gunluk_sayac.sira
-
             }
 
             proje_listesi.append(proje_dict)
@@ -93,13 +65,6 @@ class ProjeManager:
             session.delete(proje)
             return True
         return False
-
-    def create_gunluk_sayac(self, session, proje_id, tarih, sayac):
-        new_gunluk_sayac = GunlukSayac(proje_id=proje_id, tarih=tarih, sayac=sayac)
-        session.add(new_gunluk_sayac)
-        session.commit()
-        session.refresh(new_gunluk_sayac)
-        return new_gunluk_sayac
 
     def generate_short_hash_id(self):
         # Zaman damgasını kullanarak benzersiz bir veri oluştur

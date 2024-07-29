@@ -17,11 +17,8 @@ Session = sessionmaker(bind=engine)
 from models.ProjeModel import Proje
 from models.ProjeSinifModel import ProjeSinif
 from models.ProjeMetodModel import ProjeMetod
-from models.GunlukSayacModel import GunlukSayac
-
 from models.TakipModel import Takip
 from models.TakipZamanModel import TakipZaman
-
 from models.ArananJsonModel import ArananJson
 from models.ArananRegexModel import ArananRegex
 

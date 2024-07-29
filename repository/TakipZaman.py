@@ -7,14 +7,14 @@ class TakipZamanManager:
         self.session = session
 
     @staticmethod
-    def create_takip_zaman(self, logId, takipId, zaman=None):
+    def create_takip_zaman(session, logId, takipId, zaman=None):
         if zaman is None:
             zaman = datetime.now(timezone.utc)
 
-        new_takip_zaman = TakipZaman(log_id=logId, zaman=zaman, takip_id=takipId, )
-        self.session.add(new_takip_zaman)
-        self.session.commit()
-        self.session.refresh(new_takip_zaman)
+        new_takip_zaman = TakipZaman(log_id=logId, zaman=zaman, takip_id=takipId)
+        session.add(new_takip_zaman)
+        session.commit()
+        session.refresh(new_takip_zaman)
         return new_takip_zaman
 
     def get_takip_zaman_by_id(self, takip_zaman_id):
