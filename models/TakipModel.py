@@ -6,8 +6,9 @@ from models.OrtakBaglanti import Base
 class Takip(Base):
     __tablename__ = 'takip'
     id = Column(Integer, primary_key=True, unique=True, index=True)
-    hata = Column(String(255))
-    adet = Column(String(255))
+    nerde = Column(String)
+    hata = Column(String)
+    adet = Column(Integer)
     proje_id = Column(Integer, ForeignKey('proje.id'))
 
     proje = relationship('Proje', foreign_keys=[proje_id])

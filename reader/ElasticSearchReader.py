@@ -3,29 +3,46 @@ from concurrent.futures import as_completed, ThreadPoolExecutor
 from datetime import datetime
 from elasticsearch import Elasticsearch, NotFoundError
 from elasticsearch.helpers import scan
+from models.OrtakBaglanti import session_scope
 from reader.ProjectList import project
+from repository.Takip import TakipManager
+from repository.TakipZaman import TakipZamanManager
 from util.LogProcess import logger
 import queue
-
+from util.ConfigLoarder import es_host, es_port
 
 class ElasticSearchReader:
     def __init__(self):
-        self.es = Elasticsearch([{'host': 'localhost', 'port': 9200, 'scheme': 'http'}])
+        self.es = Elasticsearch([{'host': es_host, 'port': es_port, 'scheme': 'http'}])
         self.log_queue = queue.Queue()
         self.seen_ids = set()
 
-    def ayristir(self, log_id, logs):
+    def ayristir(self, proje, log_id, logs):
 
         for log in logs:
             logSource = log['_source']
             if logSource['level'] in ('WARN','ERROR') and logSource['processed'] is False:
-                logger.info(f"Warning log detected: {log}")
+                logger.info(f"log detected: {log}")
                 try:
                     doc = self.es.get(index=log['_index'], id=log_id)
+
+                    self.kaydet(proje, log)
+
                     doc['_source']['processed'] = True
                     self.es.update(index=log['_index'], id=log_id, body={'doc': doc['_source']})
                 except NotFoundError:
                     logger.error(f"Document with ID {log_id} not found.")
+
+    def kaydet(self, proje, log_data):
+        logger_name = log_data['_source']['loggerName']
+        message = log_data['_source']['message']
+        logId = log_data['_source']['logId']
+        projeId = proje['proje_id']
+
+        with session_scope() as session:
+            kaydedilenTakip = TakipManager.create_or_update_takip(session, logger_name, message, projeId)
+            TakipZamanManager.create_takip_zaman(session, logId, kaydedilenTakip.id)
+
 
     def streaming(self, proje):
         while True:
@@ -54,15 +71,21 @@ class ElasticSearchReader:
 
             time.sleep(1)
 
-    def process_logs(self):
+    def process_logs(self, proje):
         while True:
             if not self.log_queue.empty():
                 log_id, log = self.log_queue.get()
-                self.ayristir(log_id, [log])
+                self.ayristir(proje, log_id, [log])
             else:
                 time.sleep(1)
 
     def start(self):
         with ThreadPoolExecutor() as executor:
-            futures = {executor.submit(self.streaming, proje): proje for proje in project.list()}
-            executor.submit(self.process_logs)
+            futures = []
+            for proje in project.list():
+                futures.append(executor.submit(self.streaming, proje))
+                futures.append(executor.submit(self.process_logs, proje))
+
+            for future in as_completed(futures):
+                result = future.result()
+                logger.info(f"Task completed with result: {result}")

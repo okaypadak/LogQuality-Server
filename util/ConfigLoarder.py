@@ -1,22 +1,27 @@
 import yaml
 
 # Global değişkenler
-server_host = None
-server_port = None
+postgres_host = None
+postgres_port = None
 database_name = None
+es_host = None
+es_port = None
 
 def read_config(file_path):
 
-    global server_host, server_port, database_name
+    global postgres_host, postgres_port, database_name, es_host, es_port
 
     with open(file_path, 'r') as file:
         config_data = yaml.safe_load(file)
 
-    if 'server' in config_data:
-        server_config = config_data['server']
-        server_host = server_config.get('host', 'localhost')
-        server_port = server_config.get('port', 8080)
-        database_name = server_config.get('name', 'logstrack')
+        porstgres_config = config_data['postgres']
+        postgres_host = porstgres_config.get('host', 'localhost')
+        postgres_port = porstgres_config.get('port', 5432)
+        database_name = porstgres_config.get('name', 'logquality')
+
+        es_config = config_data['elasticsearch']
+        es_host = es_config.get('host', 'localhost')
+        es_port = es_config.get('port', 9400)
 
 config_file_path = 'config.yml'
 

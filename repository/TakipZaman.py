@@ -6,11 +6,12 @@ class TakipZamanManager:
     def __init__(self, session):
         self.session = session
 
-    def create_takip_zaman(self, takip_id, zaman=None):
+    @staticmethod
+    def create_takip_zaman(self, logId, takipId, zaman=None):
         if zaman is None:
             zaman = datetime.now(timezone.utc)
 
-        new_takip_zaman = TakipZaman(takip_id=takip_id, zaman=zaman)
+        new_takip_zaman = TakipZaman(log_id=logId, zaman=zaman, takip_id=takipId, )
         self.session.add(new_takip_zaman)
         self.session.commit()
         self.session.refresh(new_takip_zaman)

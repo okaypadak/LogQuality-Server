@@ -10,7 +10,7 @@ class ProjeSinifMetodManager:
     def create_proje_sinif(self, session, class_name, project_id):
         proje_sinif = ProjeSinif(ad=class_name, proje_id=project_id)
         session.add(proje_sinif)
-        session.flush()  # primary key almak için
+        session.flush()
         return proje_sinif.id
 
     def create_proje_metod(self, session, method_name, proje_sinif_id):
