@@ -4,3 +4,4 @@ psycopg2-pool==1.2
 SQLAlchemy==2.0.31
 Flask==3.0.3
 schedule==1.2.2
+yaml==6.0.1
