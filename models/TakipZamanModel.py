@@ -14,5 +14,4 @@ class TakipZaman(Base):
     log_id = Column(BigInteger)
     takip_id = Column(Integer, ForeignKey('takip.id'))
 
-    takip = relationship('Takip', back_populates='takip_zaman', uselist=False)
-
+    takip = relationship("Takip", back_populates="takip_zaman")

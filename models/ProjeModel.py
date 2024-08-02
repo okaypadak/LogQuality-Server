@@ -12,4 +12,5 @@ class Proje(Base):
     git_url = Column(String)
     aktif = Column(Integer)
 
-    siniflar = relationship('ProjeSinif', back_populates='proje')
+    proje_sinif = relationship("ProjeSinif", back_populates="proje")
+    aranan = relationship("Aranan", back_populates="proje")

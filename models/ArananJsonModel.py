@@ -6,8 +6,8 @@ class ArananJson(Base):
     __tablename__ = 'aranan_json'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    aranan = Column(String(255), nullable=False)
-    degisken = Column(String(255), nullable=False)
-    proje_id = Column(Integer, ForeignKey('proje.id'))
+    degisken = Column(String, nullable=False)
+    deger = Column(String, nullable=False)
+    aranan_id = Column(Integer, ForeignKey('aranan.id'))
 
-    proje = relationship('Proje', foreign_keys=[proje_id])
+    aranan = relationship("Aranan", back_populates="aranan_json")

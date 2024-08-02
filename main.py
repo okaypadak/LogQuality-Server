@@ -72,10 +72,10 @@ if __name__ == "__main__":
         log_processor = logQuality()
         log_processor.schedule_thread.start()
         #log_processor.rest_thread.start()
-        log_processor.run_git_repo_thread.start()
+        #log_processor.run_git_repo_thread.start()
 
         log_processor.schedule_thread.join()
         #log_processor.rest_thread.join()
-        log_processor.run_git_repo_thread.join()
+        #log_processor.run_git_repo_thread.join()
     except Exception as e:
         logger.error("Error in main: %s", e, exc_info=True)

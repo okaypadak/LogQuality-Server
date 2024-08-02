@@ -8,4 +8,4 @@ class ProjeMetod(Base):
     ad = Column(String)
     proje_sinif_id = Column(Integer, ForeignKey('proje_sinif.id'))
 
-    sinif = relationship('ProjeSinif', back_populates='metodlar')
+    proje_sinif = relationship("ProjeSinif", back_populates="proje_metod")

@@ -2,7 +2,7 @@ from contextlib import contextmanager
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
 from util.ConfigLoarder import postgres_host, postgres_port, database_name
 
@@ -19,6 +19,8 @@ from models.ProjeSinifModel import ProjeSinif
 from models.ProjeMetodModel import ProjeMetod
 from models.TakipModel import Takip
 from models.TakipZamanModel import TakipZaman
+from models.Aranan import Aranan
+from models.ArananKayit import ArananKayit
 from models.ArananJsonModel import ArananJson
 from models.ArananRegexModel import ArananRegex
 

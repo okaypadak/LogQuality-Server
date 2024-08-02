@@ -1,10 +1,12 @@
 import base64
 
+from models.OrtakBaglanti import session_scope
 from models.ProjeModel import Proje
 import hashlib
 import time
 from datetime import datetime
 
+from util.LogProcess import logger
 
 
 class ProjeManager:
@@ -36,21 +38,21 @@ class ProjeManager:
         return session.query(Proje).filter(Proje.id == proje_id).first()
 
     def get_all_proje_to_dict(self, session):
+        try:
+            projeler = session.query(Proje).all()
+            proje_listesi = []
+            for proje in projeler:
+                tek = {
+                    'proje_id': proje.id,
+                    'proje_adi': proje.proje_adi,
+                    'index_name': proje.index_name,
+                }
+                proje_listesi.append(tek)
+            return proje_listesi
 
-        projeler = session.query(Proje).all()
-
-        proje_listesi = []
-
-        for proje in projeler:
-            proje_dict = {
-                'proje_id': proje.id,
-                'proje_adi': proje.proje_adi,
-                'index_name': proje.index_name,
-            }
-
-            proje_listesi.append(proje_dict)
-
-        return proje_listesi
+        except Exception as e:
+            logger.error("Error fetching projects: %s", e, exc_info=True)
+            return []
 
     def update_proje(self, session, proje_id, new_values):
         proje = session.query(Proje).filter(Proje.id == proje_id).first()
