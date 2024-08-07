@@ -9,16 +9,8 @@ from repository.ProjeSinifMetod import ProjeSinifMetodManager
 from util import FlaskRun
 from util.GitRepoManager import GitRepoManager
 from util.JavaCodeAnalyzer import JavaCodeAnalyzer
+from util.LogProcess import logger
 
-# Logging configuration
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    handlers=[
-                        logging.FileHandler("app.log"),
-                        # logging.StreamHandler()
-                    ])
-
-logger = logging.getLogger(__name__)
 
 class logQuality:
 
