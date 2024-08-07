@@ -1,10 +1,12 @@
+import re
 import time
 from concurrent.futures import as_completed, ThreadPoolExecutor
-from datetime import datetime
 from elasticsearch import Elasticsearch, NotFoundError
 from elasticsearch.helpers import scan
 from models.OrtakBaglanti import session_scope
 from reader.ProjectList import project
+from repository.ArananKayitRepository import ArananKayitRepository
+from repository.ArananRegex import ArananRegexManager
 from repository.Takip import TakipManager
 from repository.TakipZaman import TakipZamanManager
 from util.LogProcess import logger
@@ -21,41 +23,69 @@ class ElasticSearchReader:
 
         for log in logs:
             logSource = log['_source']
-            if logSource['level'] in ('WARN','ERROR') and logSource['processed'] is False:
-                logger.info(f"log detected: {log}")
-                try:
-                    doc = self.es.get(index=log['_index'], id=log_id)
+            #logger.info(f"log yakalandi: {log}")
 
-                    self.kaydet(proje, log)
+            try:
+                doc = self.es.get(index=log['_index'], id=log_id)
+                exception = log['_source']['exception']
 
-                    doc['_source']['processed'] = True
-                    self.es.update(index=log['_index'], id=log_id, body={'doc': doc['_source']})
-                except NotFoundError:
-                    logger.error(f"Document with ID {log_id} not found.")
+                if logSource['level'] in ('WARN', 'ERROR'):
+                    if not exception:
+                        self.belirli(proje, log)
+                    else:
+                        self.belirsiz(proje, log)
 
-    def kaydet(self, proje, log_data):
+                doc['_source']['processed'] = True
+                self.es.update(index=log['_index'], id=log_id, body={'doc': doc['_source']})
+
+            except NotFoundError:
+                logger.error(f"Document with ID {log_id} not found.")
+
+    def belirli(self, proje, log_data):
         logger_name = log_data['_source']['loggerName']
         message = log_data['_source']['message']
         logId = log_data['_source']['logId']
+        logTime = log_data['_source']['logTime']
         projeId = proje['proje_id']
 
         with session_scope() as session:
             kaydedilenTakip = TakipManager.create_or_update_takip(session, logger_name, message, projeId)
-            TakipZamanManager.create_takip_zaman(session, logId, kaydedilenTakip.id)
+            TakipZamanManager.create_takip_zaman(session, logId, kaydedilenTakip.id, logTime)
+
+
+    def belirsiz(self, proje, log_data):
+
+        exception = log_data['_source']['exception']
+        projeId = proje['proje_id']
+        logTime = log_data['_source']['logTime']
+        message = log_data['_source']['message']
+
+        results = {}
+
+        with session_scope() as session:
+            regexs = ArananRegexManager.get_regexes_by_aranan_id(session, 1)
+
+            sinif = re.findall(regexs['sınıf'], exception)[0]
+            metod = re.findall(regexs['metod'], exception)[0]
+            satir = re.findall(regexs['satır'], exception)[0]
+            hata = re.findall(regexs['hata'], message)[0]
+
+            ArananKayitRepository(session).add_aranan_kayit('sinif', sinif, 1)
+            ArananKayitRepository(session).add_aranan_kayit('metod', metod, 1)
+            ArananKayitRepository(session).add_aranan_kayit('satir_sayisi', satir, 1)
+            ArananKayitRepository(session).add_aranan_kayit('hata', hata, 1)
+            kaydedilenTakip = TakipManager.create_or_update_takip(session, sinif + '.' + metod, message, projeId)
+            TakipZamanManager.create_takip_zaman(session, 0, kaydedilenTakip.id, logTime)
+
 
 
     def streaming(self, proje):
         while True:
-            today = datetime.now().strftime("%Y-%m-%d")
-            start_of_day = today + "T00:00:00"
-            end_of_day = today + "T23:59:59"
-
             query = {
                 "query": {
-                    "range": {
-                        "@timestamp": {
-                            "gte": start_of_day,
-                            "lte": end_of_day
+                    "term": {
+                        "processed": {
+                            "value": False
                         }
                     }
                 }

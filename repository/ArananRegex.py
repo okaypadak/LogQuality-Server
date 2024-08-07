@@ -12,12 +12,15 @@ class ArananRegexManager:
     def get_all_regex(self, session):
         return session.query(ArananRegex).all()
 
-    def get_regexes_by_proje_id(self, session, proje_id):
+    @staticmethod
+    def get_regexes_by_aranan_id(session, aranan_id):
+        regexler = session.query(ArananRegex).filter_by(aranan_id=aranan_id).all()
 
-        regexler = session.query(ArananRegex).filter_by(proje_id=proje_id).all()
+        grouped_regex = {}
+        for item in regexler:
+            grouped_regex[item.degisken] = item.deger
 
-        return regexler
-
+        return grouped_regex
 
     def read_regex_deger(self, session, regex_id):
         return session.query(ArananRegex).filter_by(id=regex_id).first()

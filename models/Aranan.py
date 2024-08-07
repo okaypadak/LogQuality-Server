@@ -7,7 +7,6 @@ class Aranan(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     aciklama = Column(String, nullable=False)
-    adet = Column(Integer, nullable=False)
     proje_id = Column(Integer, ForeignKey('proje.id'))
     proje = relationship("Proje", back_populates="aranan")
 
